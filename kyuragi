@@ -1,0 +1,38 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import datetime
+import calendar
+import glob
+from pandas.plotting import scatter_matrix
+import os
+import sys
+from matplotlib import rcParams
+rcParams['font.family'] = 'sans-serif'
+rcParams['font.sans-serif'] = ['Hiragino Maru Gothic Pro', 'Yu Gothic', 'Meirio', 'Takao', 'IPAexGothic', 'IPAPGothic', 'Noto Sans CJK JP']
+
+def save_fig(fig_id, tight_layout=True, fig_extension="png", resolution=300):
+    path = os.path.join('./', fig_id + "." + fig_extension)
+    print("Saving figure", fig_id)
+    if tight_layout:
+        plt.tight_layout()
+    plt.savefig(path, format=fig_extension, dpi=resolution)
+    
+def remove_str(s):
+    """
+    数値に変換できない値をnp.nanに置換する
+    """
+    try:
+        return float(s)
+    except ValueError:
+        return np.nan
+
+def remove_error(x):
+    """
+    負値をnp.nanに置換する
+    """
+    if x<0:
+        return np.nan
+    else:
+        return x
