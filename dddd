@@ -1,0 +1,63 @@
+files   = glob.glob('./*.csv')
+dflist  = [[] for x in range(len(files))]
+dflist2 = [[] for x in range(len(files))]
+df      = [[] for x in range(len(files))]
+df2     = [[] for x in range(len(files))]
+for i,f in enumerate(files):
+    df[i] = pd.read_csv(f, index_col=0, header=0, parse_dates=True, encoding='cp932')
+    
+    # 欠測値のNAN化
+    for j, s in enumerate(df[i].columns):
+        dflist[i].append(df[i][s].map(remove_str).map(remove_error).astype('float'))
+    df[i] = pd.concat(dflist[i],axis=1)
+    # NANの内挿
+    df[i] = df[i].interpolate(limit=3,limit_area='inside')
+    df[i].to_csv(f'Graph/{os.path.splitext(os.path.basename(f))[0]}_naiso3day.csv', encoding='cp932')
+    
+for i,f in enumerate(files):
+    df2[i] = pd.read_csv(f, index_col=0, header=0, parse_dates=True, encoding='cp932')
+    # 欠測値のNAN化
+    for j, s in enumerate(df2[i].columns):
+        dflist2[i].append(df2[i][s].map(remove_str).map(remove_error).astype('float'))
+    df2[i] = pd.concat(dflist2[i],axis=1)
+    # NANの内挿
+    df2[i] = df2[i].interpolate(limit=999,limit_area='inside')
+    df2[i].to_csv(f'Graph/{os.path.splitext(os.path.basename(f))[0]}_naiso999day.csv', encoding='cp932')
+
+
+colorlist = ["r", "g", "b", "c", "m", "y", "k", "w"]
+colorlistt = ["steelblue", "darkorange", "limegreen", "crimson", "slateblue", "maroon","r", "g", "b", "c", "m", "y", "k", "w"]
+print(files)
+for i,f in enumerate(files):
+    df_year_list = list(set(df[i][1:].index.year))
+    df_year_list.sort()
+    ff = os.path.splitext(os.path.basename(f))[0]
+
+    for iy in df_year_list:
+        sdate = datetime.datetime(iy,1,1)
+        edate = datetime.datetime(iy,12,31)
+        fig, axs = plt.subplots(nrows=len(df[i].columns), ncols=1, squeeze=True, figsize=(15,9))
+        for j, col in enumerate(df[i].columns):
+            df_mean = df[i].describe().iloc[1][j]
+            df_std  = df[i].describe().iloc[2][j]
+            axs[j].plot(df[i].index, df[i][col], color=colorlistt[j],label=df[i].columns[j], linestyle='-')
+            #axs[j].plot([df[i].index.min(), df[i].index.max()], [df_mean - 3*df_std,df_mean - 3*df_std], color='black', label='-3σ')
+            #axs[j].plot([df[i].index.min(), df[i].index.max()], [df_mean + 3*df_std,df_mean + 3*df_std], color='black', label='3σ')
+            axs[j].legend(bbox_to_anchor=(1, 1), loc='upper right', borderaxespad=0, fontsize=10)
+            axs[j].set_xlim(sdate,edate)
+            axs[j].set_ylim(df[i][col].min(), df[i][col].max())
+            axs[j].grid(b=True,which='major')
+            axs[j].grid(b=True,which='minor')
+        #plt.show()
+        save_fig(f'./Graph/year{ff}_{iy}')
+
+
+        for im in [1,2,3,4,5,6,7,8,9,10,11,12]:
+            for j, col in enumerate(df[i].columns):
+                print(calendar.monthrange(iy, im))
+                sdate = datetime.date(iy, im, 1)
+                edate = datetime.date(iy, im, calendar.monthrange(iy, im)[1])
+                axs[j].set_xlim(sdate,edate)
+            save_fig(f'./Graph/month_{ff}_{iy}{im:02}')
+
+
